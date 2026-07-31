@@ -15,9 +15,11 @@ private:
 public:
 
     Customer(int id, string& name,string& email,int phone, int age);
+    Customer(){};
+    Customer(const string& email);
     void print();
     void save();
-    bool validateEmail(string& email);
+    bool validateEmail(const string& email);
     bool updateEmail(string& new_email);
     void updatePhone(int new_phone);
     bool updateContactInfo(int new_phone,string& new_email);

@@ -120,7 +120,7 @@ void initialize(sqlite3 *db)
     }
 }
 
-void insertCustomer(sqlite3 *db, const std::string &name, const std::string &email, int phone, int age)
+void insertCustomer(sqlite3 *db, const std::string &name, const std::string &email, int phone, int age, std::string &password)
 {
     const char *sql = "INSERT INTO customers (name, email, phone, age) VALUES (?, ?, ?, ?);";
     sqlite3_stmt *stmt = nullptr;
@@ -142,6 +142,31 @@ void insertCustomer(sqlite3 *db, const std::string &name, const std::string &ema
     if (sqlite3_step(stmt) == SQLITE_DONE)
     {
         std::cout << "Inserted customer successfully.\n";
+    }
+    else
+    {
+        std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sql = "INSERT INTO creds (name, email, password) VALUES (?, ?, ?);";
+    stmt = nullptr;
+
+    // 1. Prepare statement
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+        return;
+    }
+
+    // 2. Bind parameters (1-indexed)
+    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, email.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, password.c_str(), -1, SQLITE_TRANSIENT);
+
+    // 3. Step (execute query)
+    if (sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        std::cout << "Inserted customer's password successfully.\n";
     }
     else
     {
@@ -199,7 +224,7 @@ void fetchCustomers(sqlite3 *db)
 
 int getItemPriceById(int item_id)
 {
-    int price=0;
+    int price = 0;
 
     sqlite3 *db = nullptr;
     if (sqlite3_open("inventory.db", &db) != SQLITE_OK)
@@ -216,7 +241,6 @@ int getItemPriceById(int item_id)
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
     {
         std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
-        
     }
 
     sqlite3_bind_int(stmt, 1, item_id);
@@ -225,7 +249,7 @@ int getItemPriceById(int item_id)
 
     if (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        return sqlite3_column_int(stmt,0);
+        return sqlite3_column_int(stmt, 0);
     }
     else
     {
@@ -237,10 +261,9 @@ int getItemPriceById(int item_id)
     return price;
 }
 
-
 int getItemPriceBySku(int sku)
 {
-    int price=0;
+    int price = 0;
 
     sqlite3 *db = nullptr;
     if (sqlite3_open("inventory.db", &db) != SQLITE_OK)
@@ -257,7 +280,6 @@ int getItemPriceBySku(int sku)
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
     {
         std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
-        
     }
 
     sqlite3_bind_int(stmt, 1, sku);
@@ -266,7 +288,7 @@ int getItemPriceBySku(int sku)
 
     if (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        return sqlite3_column_int(stmt,0);
+        return sqlite3_column_int(stmt, 0);
     }
     else
     {
@@ -279,7 +301,7 @@ int getItemPriceBySku(int sku)
 
 int getItemQuantity(int item_id)
 {
-    int price=0;
+    int price = 0;
     sqlite3 *db = nullptr;
     if (sqlite3_open("inventory.db", &db) != SQLITE_OK)
     {
@@ -295,7 +317,6 @@ int getItemQuantity(int item_id)
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
     {
         std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
-        
     }
 
     sqlite3_bind_int(stmt, 1, item_id);
@@ -304,7 +325,7 @@ int getItemQuantity(int item_id)
 
     if (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        return sqlite3_column_int(stmt,0);
+        return sqlite3_column_int(stmt, 0);
     }
     else
     {
@@ -313,4 +334,31 @@ int getItemQuantity(int item_id)
     sqlite3_finalize(stmt);
     sqlite3_close(db);
     return price;
+}
+
+bool checkEmail(sqlite3* db, const std::string& email) {
+    const char* sql = "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(email) = LOWER(?1));";
+    
+    sqlite3_stmt* stmt = nullptr;
+    bool exists = false;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    if (sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "Failed to bind parameter: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        exists = (sqlite3_column_int(stmt, 0) == 1);
+    } else {
+        std::cerr << "Failed to execute query: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return exists;
 }

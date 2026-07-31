@@ -26,6 +26,10 @@ Customer::Customer(int id, string& name, string& email, int phone, int age)
         this->email = email;
     }
 }
+Customer::Customer(const string& email){
+    this->email=email;
+}
+
 
 void Customer::print()
 {
@@ -36,7 +40,7 @@ void Customer::save()
 {
 }
 
-bool Customer::validateEmail(string& email)
+bool Customer::validateEmail(const string& email)
 {
     const regex emailPattern(R"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})");
     return regex_match(email, emailPattern);
