@@ -1,0 +1,6 @@
+1. Fill the admin and client cli
+-> Let the admin create/delete accounts
+-> Let users create/delete accounts
+-> Let users create/delete orders
+->
+->
