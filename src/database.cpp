@@ -2,6 +2,7 @@
 #include <string>
 #include "database.hpp"
 #include <sqlite3.h>
+#include <optional>
 
 void initialize(sqlite3 *db)
 {
@@ -259,7 +260,7 @@ int getItemPriceById(int item_id)
     return price;
 }
 
-int getItemPriceBySku(int sku)
+int getItemPriceBySku(std::string &sku)
 {
     int price = 0;
 
@@ -280,7 +281,7 @@ int getItemPriceBySku(int sku)
         std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
     }
 
-    sqlite3_bind_int(stmt, 1, sku);
+    sqlite3_bind_text(stmt, 1, sku.c_str(), -1, SQLITE_TRANSIENT);
 
     char *errMsg = nullptr;
 
@@ -334,29 +335,116 @@ int getItemQuantity(int item_id)
     return price;
 }
 
-bool checkEmail(sqlite3* db, const std::string& email) {
-    const char* sql = "SELECT EXISTS(SELECT 1 FROM customers WHERE LOWER(email) = LOWER(?1));";
-    
-    sqlite3_stmt* stmt = nullptr;
+bool checkEmail(sqlite3 *db, const std::string &email)
+{
+    const char *sql = "SELECT EXISTS(SELECT 1 FROM customers WHERE LOWER(email) = LOWER(?1));";
+
+    sqlite3_stmt *stmt = nullptr;
     bool exists = false;
 
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
         return false;
     }
 
-    if (sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+    {
         std::cerr << "Failed to bind parameter: " << sqlite3_errmsg(db) << std::endl;
         sqlite3_finalize(stmt);
         return false;
     }
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
         exists = (sqlite3_column_int(stmt, 0) == 1);
-    } else {
+    }
+    else
+    {
         std::cerr << "Failed to execute query: " << sqlite3_errmsg(db) << std::endl;
     }
 
     sqlite3_finalize(stmt);
 
     return exists;
+}
+
+bool checkPassword(sqlite3 *db, const std::string &email, const std::string &password)
+{
+    const char *sql = "SELECT password FROM creds WHERE email=?;";
+    std::string correct_password;
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    if (sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+    {
+        std::cerr << "Failed to bind parameter: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const unsigned char *text = sqlite3_column_text(stmt, 0);
+        if (text != nullptr)
+        {
+            correct_password = reinterpret_cast<const char *>(text);
+        }
+        else
+        {
+            correct_password = ""; // Or handle NULL value appropriately
+        }
+    }
+    else
+    {
+        std::cerr << "Failed to execute query: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+    if (correct_password == password)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+std::optional<std::string> getName(sqlite3 *db, const std::string &email)
+{
+    const char *sql = "SELECT name FROM customers WHERE email = ?;";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return std::nullopt;
+    }
+
+    if (sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+    {
+        std::cerr << "Failed to bind parameter: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return std::nullopt;
+    }
+
+    std::optional<std::string> result = std::nullopt;
+
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const unsigned char *text = sqlite3_column_text(stmt, 0);
+        if (text != nullptr)
+        {
+            result = reinterpret_cast<const char *>(text);
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
+    return result;
 }
