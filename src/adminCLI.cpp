@@ -2,7 +2,7 @@
 #include "database.hpp"
 
 using namespace std;
-int runAdminCLI(sqlite3* db){
+void runAdminCLI(sqlite3* db){
 
 }
 

@@ -99,12 +99,11 @@ void initialize(sqlite3 *db)
 
     sql = R"(
     CREATE TABLE IF NOT EXISTS creds (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        FOREIGN KEY (name) REFERENCES customers(name),
-        FOREIGN KEY (email) REFERENCES customers(email),
-        password TEXT NOT NULL;
-        
-    );
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    password TEXT NOT NULL,
+    FOREIGN KEY (email) REFERENCES customers(email)
+);
     
     
 )";
@@ -120,7 +119,7 @@ void initialize(sqlite3 *db)
     }
 }
 
-void insertCustomer(sqlite3 *db, const std::string &name, const std::string &email, int phone, int age, std::string &password)
+void insertCustomer(sqlite3 *db, const std::string &name, const std::string &email, double phone, int age, const std::string &password)
 {
     const char *sql = "INSERT INTO customers (name, email, phone, age) VALUES (?, ?, ?, ?);";
     sqlite3_stmt *stmt = nullptr;
@@ -135,7 +134,7 @@ void insertCustomer(sqlite3 *db, const std::string &name, const std::string &ema
     // 2. Bind parameters (1-indexed)
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, email.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 3, phone);
+    sqlite3_bind_double(stmt, 3, phone);
     sqlite3_bind_int(stmt, 4, age);
 
     // 3. Step (execute query)
@@ -148,7 +147,7 @@ void insertCustomer(sqlite3 *db, const std::string &name, const std::string &ema
         std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
     }
 
-    sql = "INSERT INTO creds (name, email, password) VALUES (?, ?, ?);";
+    sql = "INSERT INTO creds (email, password) VALUES (?, ?);";
     stmt = nullptr;
 
     // 1. Prepare statement
@@ -159,9 +158,8 @@ void insertCustomer(sqlite3 *db, const std::string &name, const std::string &ema
     }
 
     // 2. Bind parameters (1-indexed)
-    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, email.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 3, password.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, password.c_str(), -1, SQLITE_TRANSIENT);
 
     // 3. Step (execute query)
     if (sqlite3_step(stmt) == SQLITE_DONE)
@@ -337,7 +335,7 @@ int getItemQuantity(int item_id)
 }
 
 bool checkEmail(sqlite3* db, const std::string& email) {
-    const char* sql = "SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(email) = LOWER(?1));";
+    const char* sql = "SELECT EXISTS(SELECT 1 FROM customers WHERE LOWER(email) = LOWER(?1));";
     
     sqlite3_stmt* stmt = nullptr;
     bool exists = false;

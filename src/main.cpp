@@ -22,6 +22,7 @@ int main()
         cout << "Choose a mode" << endl;
         cout << "1. Admin" << endl;
         cout << "2. Client" << endl;
+        cout << "3. Exit" << endl;
         string choice;
         getline(cin >> ws, choice);
 
@@ -35,6 +36,9 @@ int main()
             runClientCLI(db);
             break;
 
+        case 3:
+            run = false;
+            break;
         default:
             cout << "Choose a valid operation";
             break;

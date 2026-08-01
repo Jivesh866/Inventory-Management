@@ -5,12 +5,13 @@
 using namespace std;
 
 
-int runClientCLI(sqlite3* db){
+void runClientCLI(sqlite3* db){
     bool run = true;
     while(run){
         cout << "What will you do today!" << endl;
         cout << "1. Create account" << endl;
         cout << "2. Login" << endl;
+        cout << "3. Exit" << endl;
         string choice,name,email,phone,age,password;
         Customer verify;
         getline(cin>>ws,choice);
@@ -31,15 +32,15 @@ int runClientCLI(sqlite3* db){
 
                 cout << "Enter your age" << endl;
                 getline(cin>>ws,age);
-                if(stoi(age)<0){
+                if(stoi(age)<12 || stoi(age)>150){
                     cout<<"Enter a valid age";
                     break;
                 }
 
                 cout<<"Enter your phone number"<<endl;
                 getline(cin>>ws,phone);
-                if(stoi(phone) < 1000000000){
-                    cout<<"Invalid Phone number, must be 10 digits"<<endl;
+                if(stod(phone) < 1000000000 && stod(phone) > 9999999999){
+                    cout<<"Invalid Phone number, must be 10 digits only"<<endl;
                     break;
                 }
 
@@ -47,7 +48,7 @@ int runClientCLI(sqlite3* db){
                 getline(cin>>ws,password);
                 
 
-                insertCustomer(db,name,email,stoi(phone),stoi(age),password);
+                insertCustomer(db,name,email,stod(phone),stoi(age),password);
                 cout << "Created the user" << endl;
                 break;
             }
@@ -55,6 +56,11 @@ int runClientCLI(sqlite3* db){
 
             case 2:
             break;
+
+            case 3:{
+                run = false;
+                break;
+            }
 
             default:
             cout<< "Please choose a valid option!" << endl;

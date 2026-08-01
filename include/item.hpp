@@ -21,7 +21,7 @@ public:
     void updateQuantity(int new_stock);
     bool isLowStock() const;
 
-    int setPrice(int new_price)
+    void setPrice(int new_price)
     {
         price=new_price;
     }

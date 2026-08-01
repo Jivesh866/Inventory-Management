@@ -85,5 +85,6 @@ bool Customer::updateContactInfo(int new_phone, string& new_email)
     {
         email=new_email;
         phone=new_phone;
+        return true;
     }
 }
