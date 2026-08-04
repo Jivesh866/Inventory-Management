@@ -19,14 +19,14 @@ public:
     Customer() {};
     Customer(const string &email);
     void print();
-    void save();
+    void deleteUser(sqlite3* db);
     bool validateEmail(const string &email);
-    bool updateEmail(const string &new_email);
+    bool updateEmail(sqlite3* db,const string &new_email);
     void updatePhone(sqlite3 *db, long long new_phone);
     void updateAge(sqlite3 *db, int new_age);
     void updateName(sqlite3 *db, const string& new_name);
     bool updateContactInfo(long long new_phone, string &new_email);
-
+    void updatePassword(sqlite3* db,const std::string& new_password);
     int getAge() const
     {
         return this->age;

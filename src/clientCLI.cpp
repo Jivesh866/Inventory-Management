@@ -164,7 +164,6 @@ void afterLogin(sqlite3 *db, Customer user)
         cout << "2. Cancel an order" << endl;
         cout << "3. Update Info" << endl;
         cout << "4. Update Credentials" << endl;
-
         cout << "5. Close this account" << endl;
         cout << "6. Logout" << endl;
         string choice;
@@ -236,8 +235,10 @@ void afterLogin(sqlite3 *db, Customer user)
                         user.updateAge(db, stoi(age));
                         input = false;
                     }
-                }else{
-                    input=false;
+                }
+                else
+                {
+                    input = false;
                 }
             }
             input = true;
@@ -251,18 +252,64 @@ void afterLogin(sqlite3 *db, Customer user)
                 {
                     user.updateName(db, name);
                     input = false;
-                }else{
-                    input=false;
+                }
+                else
+                {
+                    input = false;
                 }
             }
             break;
         }
         case 4:
         {
+            string new_email, new_password;
+            bool run = true;
+            while (run)
+            {
+                cout << "Enter new email(enter - if not) :";
+                getline(cin >> ws, new_email);
+                removeWS(new_email);
+
+                if (new_email != "-")
+                {
+                    if (checkEmail(db, new_email))
+                    {
+                        cout << "Enter a unique email" << endl;
+                    }
+                    else
+                    {
+                        if (user.updateEmail(db, new_email))
+                        {
+                            cout << "Email update Successfully" << endl;
+                            run = false;
+                        }
+                        else
+                        {
+                            cout << "Failed to update email" << endl;
+                            run = false;
+                        }
+                    }
+                }
+                else
+                {
+                    run = false;
+                }
+            }
+
+            run = true;
+            while (run)
+            {
+                cout << "Enter new password(enter - if not) :";
+                getline(cin >> ws, new_password);
+                removeWS(new_password);
+                user.updatePassword(db,new_password);
+            }
+
             break;
         }
         case 5:
         {
+            user.deleteUser(db);
             break;
         }
         case 6:

@@ -44,5 +44,6 @@ int main()
             break;
         }
     }
+    
     sqlite3_close(db);
 }

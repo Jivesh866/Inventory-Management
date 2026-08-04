@@ -2,6 +2,7 @@
 #include "customer.hpp"
 #include <format>
 #include <regex>
+#include "database.hpp"
 #include <stdexcept>
 
 using namespace std;
@@ -36,8 +37,27 @@ void Customer::print()
     cout << format("Name: {}, Age: {}, ID: {}", name, age, id);
 }
 
-void Customer::save()
+void Customer::deleteUser(sqlite3 *db)
 {
+    const char *sql = "DELETE FROM customers WHERE email=?";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        std::cout << "Deleted customer successfully.\n";
+    }
+    else
+    {
+        std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+    sqlite3_finalize(stmt);
 }
 
 bool Customer::validateEmail(const string &email)
@@ -135,11 +155,68 @@ void Customer::updateName(sqlite3 *db, const string &new_name)
     sqlite3_finalize(stmt);
 }
 
-bool Customer::updateEmail(const string &new_email)
+void Customer::updatePassword(sqlite3 *db, const string &new_password)
+{
+    const char *sql = "UPDATE creds SET password=? WHERE email=?";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_bind_text(stmt, 1, new_password.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, this->email.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (!sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+bool Customer::updateEmail(sqlite3 *db, const string &new_email)
 {
     if (Customer::validateEmail(new_email))
     {
-        this->email = new_email;
+        const char *sql = "UPDATE customers SET email=? WHERE email=?";
+        sqlite3_stmt *stmt = nullptr;
+
+        if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+        {
+            std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+        }
+
+        sqlite3_bind_text(stmt, 1, new_email.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 2, this->email.c_str(), -1, SQLITE_TRANSIENT);
+
+        if (!sqlite3_step(stmt) == SQLITE_DONE)
+        {
+            std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+        }
+
+        sql = "UPDATE creds SET email=? WHERE email=?";
+
+        sqlite3_finalize(stmt);
+        stmt = nullptr;
+
+        if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+        {
+            std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+        }
+
+        sqlite3_bind_text(stmt, 1, new_email.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 2, this->email.c_str(), -1, SQLITE_TRANSIENT);
+
+        if (sqlite3_step(stmt) == SQLITE_DONE)
+        {
+            this->email = new_email;
+        }
+        else
+        {
+            std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+        }
         return true;
     }
     else
