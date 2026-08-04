@@ -1,8 +1,13 @@
 #include <iostream>
 #include "database.hpp"
 #include "customer.hpp"
+#include <algorithm>
+#include <cctype>
 
 using namespace std;
+
+void afterLogin(sqlite3 *db, Customer user);
+void removeWS(string &text);
 
 void runClientCLI(sqlite3 *db)
 {
@@ -16,47 +21,72 @@ void runClientCLI(sqlite3 *db)
         string choice, name, email, phone, age, password;
         Customer verify;
         getline(cin >> ws, choice);
+        removeWS(choice);
         switch (stoi(choice))
         {
         case 1:
         {
-            cout << "Enter an account name" << endl;
+            cout << "Enter an account name :";
             getline(cin >> ws, name);
 
-            cout << "Enter your email" << endl;
+            cout
+                << "Enter your email :";
             getline(cin >> ws, email);
+            removeWS(email);
             if (!verify.validateEmail(email))
             {
-                cout << "Enter a valid email" << endl;
+                cout
+                    << "Enter a valid email" << endl;
                 break;
             }
             else if (checkEmail(db, email))
             {
-                cout << "Email already exists, only unique emails are allowed" << endl;
+                cout
+                    << "Email already exists, only unique emails are allowed" << endl;
                 break;
             }
 
-            cout << "Enter your age" << endl;
+            cout
+                << "Enter your age :";
             getline(cin >> ws, age);
+            removeWS(age);
             if (stoi(age) < 12 || stoi(age) > 150)
             {
-                cout << "Enter a valid age";
+                cout
+                    << "Enter a valid age" << endl;
                 break;
             }
 
-            cout << "Enter your phone number" << endl;
+            cout
+                << "Enter your phone number :";
             getline(cin >> ws, phone);
-            if (stod(phone) < 1000000000 && stod(phone) > 9999999999)
+            removeWS(phone);
+            if (stoll(phone) < 1000000000 && stoll(phone) > 9999999999)
             {
-                cout << "Invalid Phone number, must be 10 digits only" << endl;
+                cout
+                    << "Invalid Phone number, must be 10 digits only" << endl;
                 break;
             }
 
-            cout << "Enter your password" << endl;
+            cout
+                << "Enter your password :";
             getline(cin >> ws, password);
 
-            insertCustomer(db, name, email, stod(phone), stoi(age), password);
-            cout << "Created the user" << endl;
+            insertCustomer(db, name, email, stoll(phone), stoi(age), password);
+            cout
+                << "Created the user" << endl;
+            auto id = getId(db, email);
+            if (id)
+            {
+                Customer user(id.value(), name, email, stoll(phone), stoi(age));
+                afterLogin(db, user);
+            }
+            else
+            {
+                cout
+                    << "Unable to fetch id";
+                run = false;
+            }
             break;
         }
 
@@ -65,16 +95,38 @@ void runClientCLI(sqlite3 *db)
             string email, password;
             cout << "Enter your email: ";
             getline(cin >> ws, email);
+            removeWS(email);
 
             if (checkEmail(db, email))
             {
-                cout << endl
-                     << "Enter your password: ";
+                cout
+                    << "Enter your password: ";
                 getline(cin >> ws, password);
+                removeWS(password);
+
                 if (checkPassword(db, email, password))
                 {
-                    cout << endl
-                         << "Successfully logged in as " + getName(db, email).value() <<endl;
+                    auto name = getName(db, email);
+                    if (name)
+                    {
+                        cout
+                            << "Successfully logged in as " + *name << endl;
+
+                        auto user = fetchCustomerByEmail(db, email);
+                        if (user)
+                        {
+                            afterLogin(db, user.value());
+                        }
+                        else
+                        {
+                            cout << "Unable to fetch the user" << endl;
+                        }
+                    }
+                    else
+                    {
+                        cout
+                            << "Error getting the name" << endl;
+                    }
                 }
                 else
                 {
@@ -100,4 +152,136 @@ void runClientCLI(sqlite3 *db)
             break;
         }
     }
+}
+
+void afterLogin(sqlite3 *db, Customer user)
+{
+    bool run = true;
+    while (run)
+    {
+        cout << "What do you want to do today:" << endl;
+        cout << "1. Create an order" << endl;
+        cout << "2. Cancel an order" << endl;
+        cout << "3. Update Info" << endl;
+        cout << "4. Update Credentials" << endl;
+
+        cout << "5. Close this account" << endl;
+        cout << "6. Logout" << endl;
+        string choice;
+        getline(cin >> ws, choice);
+        removeWS(choice);
+
+        switch (stoi(choice))
+        {
+        case 1:
+        {
+            break;
+        }
+        case 2:
+        {
+            break;
+        }
+        case 3:
+        {
+            string phone = "", age = "", name = "";
+            bool input = true;
+            while (input)
+            {
+                cout << R"(Enter New Phone Number(enter "-" if not): )";
+                getline(cin >> ws, phone);
+                removeWS(phone);
+
+                if (phone != "-")
+                {
+                    if (stoll(phone) < 1000000000 || stoll(phone) > 9999999999)
+                    {
+                        cout
+                            << "Invalid Phone Number" << endl;
+                    }
+                    else
+                    {
+                        bool isPhone = checkPhone(db, stoll(phone));
+                        if (isPhone)
+                        {
+                            cout << "Phone number already used pls use another one" << endl;
+                        }
+                        else
+                        {
+                            user.updatePhone(db, stoll(phone));
+                            input = false;
+                        }
+                    }
+                }
+                else
+                {
+                    input = false;
+                }
+            }
+            input = true;
+            while (input)
+            {
+                cout << R"(Enter new age(enter "-" if not) : )";
+                getline(cin >> ws, age);
+                removeWS(age);
+
+                if (age != "-")
+                {
+                    if (stoi(age) < 12 || stoi(age) > 150)
+                    {
+                        cout
+                            << "Please enter a valid age" << endl;
+                    }
+                    else
+                    {
+                        user.updateAge(db, stoi(age));
+                        input = false;
+                    }
+                }else{
+                    input=false;
+                }
+            }
+            input = true;
+            while (input)
+            {
+                cout << R"(Enter new name(enter "-" if not) : )";
+                getline(cin >> ws, name);
+                removeWS(name);
+
+                if (name != "-")
+                {
+                    user.updateName(db, name);
+                    input = false;
+                }else{
+                    input=false;
+                }
+            }
+            break;
+        }
+        case 4:
+        {
+            break;
+        }
+        case 5:
+        {
+            break;
+        }
+        case 6:
+        {
+            run = false;
+            break;
+        }
+        default:
+        {
+            cout << "Please enter a valid option";
+            break;
+        }
+        }
+    }
+}
+
+void removeWS(string &text)
+{
+    auto [first, last] = std::ranges::remove_if(text, [](unsigned char c)
+                                                { return std::isspace(c); });
+    text.erase(first, last);
 }

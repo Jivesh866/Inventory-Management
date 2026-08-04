@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "database.hpp"
+#include "customer.hpp"
 #include <sqlite3.h>
 #include <optional>
 
@@ -120,7 +121,7 @@ void initialize(sqlite3 *db)
     }
 }
 
-void insertCustomer(sqlite3 *db, const std::string &name, const std::string &email, double phone, int age, const std::string &password)
+void insertCustomer(sqlite3 *db, const std::string &name, const std::string &email, long long phone, int age, const std::string &password)
 {
     const char *sql = "INSERT INTO customers (name, email, phone, age) VALUES (?, ?, ?, ?);";
     sqlite3_stmt *stmt = nullptr;
@@ -129,13 +130,12 @@ void insertCustomer(sqlite3 *db, const std::string &name, const std::string &ema
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
     {
         std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
-        return;
     }
 
     // 2. Bind parameters (1-indexed)
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, email.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_double(stmt, 3, phone);
+    sqlite3_bind_int64(stmt, 3, phone);
     sqlite3_bind_int(stmt, 4, age);
 
     // 3. Step (execute query)
@@ -155,7 +155,6 @@ void insertCustomer(sqlite3 *db, const std::string &name, const std::string &ema
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
     {
         std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
-        return;
     }
 
     // 2. Bind parameters (1-indexed)
@@ -203,6 +202,112 @@ void fetchCustomers(sqlite3 *db)
     sqlite3_finalize(stmt);
 }
 
+std::optional<Customer> fetchCustomerById(sqlite3 *db, int id)
+{
+    const char *sql = "SELECT name,email,phone,age FROM customers WHERE id=?";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare query: " << sqlite3_errmsg(db) << std::endl;
+        return std::nullopt;
+    }
+
+    sqlite3_bind_int(stmt, 1, id);
+    std::optional<Customer> result = std::nullopt;
+
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const char *rawName = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        std::string name = rawName ? rawName : "";
+
+        const char *rawEmail = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+        std::string email = rawEmail ? rawEmail : "";
+
+        long long phone = sqlite3_column_int64(stmt, 2);
+        int age = sqlite3_column_int(stmt, 3);
+
+        result.emplace(id, name, email, phone, age);
+    }
+
+    else
+    {
+        std::cerr << "Customer not found or execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return result;
+}
+
+std::optional<Customer> fetchCustomerByEmail(sqlite3 *db, const std::string &email)
+{
+    const char *sql = "SELECT id, name, phone, age FROM customers WHERE email = ?";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare query: " << sqlite3_errmsg(db) << std::endl;
+        return std::nullopt;
+    }
+
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+
+    std::optional<Customer> result = std::nullopt;
+
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const char *rawName = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+        std::string name = rawName ? rawName : "";
+
+        int id = sqlite3_column_int(stmt, 0);
+        long long phone = sqlite3_column_int64(stmt, 2);
+        int age = sqlite3_column_int(stmt, 3);
+
+        result.emplace(id, name, email, phone, age);
+    }
+    else
+    {
+        std::cerr << "Customer not found or execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return result;
+}
+
+bool checkPhone(sqlite3 *db, long long phone)
+{
+    const char *sql = "SELECT EXISTS(SELECT 1 FROM customers WHERE phone = ?1);";
+
+    sqlite3_stmt *stmt = nullptr;
+    bool exists = false;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    if (sqlite3_bind_int64(stmt, 1, phone) != SQLITE_OK)
+    {
+        std::cerr << "Failed to bind parameter: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        exists = (sqlite3_column_int(stmt, 0) == 1);
+    }
+    else
+    {
+        std::cerr << "Failed to execute query: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return exists;
+}
 // int main() {
 //     sqlite3* db = nullptr;
 
@@ -256,7 +361,6 @@ int getItemPriceById(int item_id)
     }
 
     sqlite3_finalize(stmt);
-    sqlite3_close(db);
     return price;
 }
 
@@ -441,6 +545,41 @@ std::optional<std::string> getName(sqlite3 *db, const std::string &email)
         if (text != nullptr)
         {
             result = reinterpret_cast<const char *>(text);
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
+    return result;
+}
+
+std::optional<int> getId(sqlite3 *db,const std::string &email)
+{
+
+    const char *sql = "SELECT id FROM customers WHERE email = ?;";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return std::nullopt;
+    }
+
+    if (sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+    {
+        std::cerr << "Failed to bind parameter: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return std::nullopt;
+    }
+
+    std::optional<int> result = std::nullopt;
+
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const int id = sqlite3_column_int(stmt, 0);
+        if (id)
+        {
+            result = id;
         }
     }
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iostream>
+#include <sqlite3.h>
+
 using namespace std;
 
 class Customer
@@ -9,22 +11,22 @@ private:
     int id;
     string name;
     string email;
-    int phone;
+    long long phone;
     int age;
 
 public:
-
-    Customer(int id, string& name,string& email,int phone, int age);
-    Customer(){};
-    Customer(const string& email);
+    Customer(int id, const string &name, const string &email, long long phone, int age);
+    Customer() {};
+    Customer(const string &email);
     void print();
     void save();
-    bool validateEmail(const string& email);
-    bool updateEmail(string& new_email);
-    void updatePhone(int new_phone);
-    bool updateContactInfo(int new_phone,string& new_email);
-    
-    
+    bool validateEmail(const string &email);
+    bool updateEmail(const string &new_email);
+    void updatePhone(sqlite3 *db, long long new_phone);
+    void updateAge(sqlite3 *db, int new_age);
+    void updateName(sqlite3 *db, const string& new_name);
+    bool updateContactInfo(long long new_phone, string &new_email);
+
     int getAge() const
     {
         return this->age;
@@ -45,6 +47,4 @@ public:
     {
         return this->email;
     }
-
-    
 };
