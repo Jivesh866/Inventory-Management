@@ -49,6 +49,21 @@ void Customer::deleteUser(sqlite3 *db)
 
     sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
 
+    if (!sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sql = "DELETE FROM creds WHERE email=?";
+    stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+
     if (sqlite3_step(stmt) == SQLITE_DONE)
     {
         std::cout << "Deleted customer successfully.\n";
@@ -57,6 +72,8 @@ void Customer::deleteUser(sqlite3 *db)
     {
         std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
     }
+
+
     sqlite3_finalize(stmt);
 }
 

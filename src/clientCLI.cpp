@@ -1,8 +1,7 @@
 #include <iostream>
 #include "database.hpp"
 #include "customer.hpp"
-#include <algorithm>
-#include <cctype>
+#include "common.hpp"
 
 using namespace std;
 
@@ -18,6 +17,7 @@ void runClientCLI(sqlite3 *db)
         cout << "1. Create account" << endl;
         cout << "2. Login" << endl;
         cout << "3. Exit" << endl;
+        cout << "Option: ";
         string choice, name, email, phone, age, password;
         Customer verify;
         getline(cin >> ws, choice);
@@ -166,6 +166,7 @@ void afterLogin(sqlite3 *db, Customer user)
         cout << "4. Update Credentials" << endl;
         cout << "5. Close this account" << endl;
         cout << "6. Logout" << endl;
+        cout << "Option : ";
         string choice;
         getline(cin >> ws, choice);
         removeWS(choice);
@@ -286,7 +287,6 @@ void afterLogin(sqlite3 *db, Customer user)
                         else
                         {
                             cout << "Failed to update email" << endl;
-                            run = false;
                         }
                     }
                 }
@@ -302,7 +302,14 @@ void afterLogin(sqlite3 *db, Customer user)
                 cout << "Enter new password(enter - if not) :";
                 getline(cin >> ws, new_password);
                 removeWS(new_password);
-                user.updatePassword(db,new_password);
+                if (new_password != "-")
+                {
+                    user.updatePassword(db, new_password);
+                    run = false;
+                }
+                else{
+                    run=false;
+                }
             }
 
             break;
@@ -310,6 +317,7 @@ void afterLogin(sqlite3 *db, Customer user)
         case 5:
         {
             user.deleteUser(db);
+            run=false;
             break;
         }
         case 6:
@@ -324,11 +332,4 @@ void afterLogin(sqlite3 *db, Customer user)
         }
         }
     }
-}
-
-void removeWS(string &text)
-{
-    auto [first, last] = std::ranges::remove_if(text, [](unsigned char c)
-                                                { return std::isspace(c); });
-    text.erase(first, last);
 }

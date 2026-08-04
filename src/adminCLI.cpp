@@ -1,19 +1,26 @@
 #include <iostream>
 #include "database.hpp"
+#include "common.hpp"
 
 using namespace std;
+
+void afterLogin(sqlite3 *db);
+void removeWS(string &text);
+
 void runAdminCLI(sqlite3 *db)
 {
     bool run = true;
     while (run)
     {
         string password;
-        cout << "Enter admin password";
+        cout << "Enter admin password: ";
         getline(cin >> ws, password);
         if (password == "root")
         {
             cout << endl
                  << "Logged in as root" << endl;
+
+            afterLogin(db);
         }
         else
         {
@@ -56,4 +63,18 @@ double calculateTotalValue(sqlite3 *db)
     }
 
     return value;
+}
+
+void afterLogin(sqlite3 *db)
+{
+    string option;
+    bool run = true;
+    while (run)
+    {
+        cout << "What do you want to do today :" << endl;
+        cout << "1. Calculate Inventory worth" << endl;
+        cout << "Enter option :" << endl;
+        getline(cin >> ws, option);
+        removeWS(option);
+    }
 }

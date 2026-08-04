@@ -1,11 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 project(InventoryApp VERSION 1.0 LANGUAGES CXX)
 
-# Require C++20 standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Define the executable target and list source files
+include(FetchContent)
+FetchContent_Declare(
+    ftxui
+    GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui.git
+    GIT_TAG v5.0.0   
+)
+FetchContent_MakeAvailable(ftxui)
+
 add_executable(InventoryApp
     src/main.cpp
     src/customer.cpp
@@ -14,14 +20,17 @@ add_executable(InventoryApp
     src/order.cpp
     src/clientCLI.cpp
     src/adminCLI.cpp
+    src/common.cpp
 )
 
-# Specify header search paths for your project
 target_include_directories(InventoryApp PUBLIC include)
 
-# Find SQLite3 package
 find_package(SQLite3 REQUIRED)
-
-# Include SQLite3 headers and link the library
 target_include_directories(InventoryApp PRIVATE ${SQLite3_INCLUDE_DIRS})
 target_link_libraries(InventoryApp PRIVATE ${SQLite3_LIBRARIES})
+
+target_link_libraries(InventoryApp PRIVATE
+    ftxui::screen
+    ftxui::dom
+    ftxui::component
+)

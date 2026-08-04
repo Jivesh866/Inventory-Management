@@ -23,6 +23,7 @@ int main()
         cout << "1. Admin" << endl;
         cout << "2. Client" << endl;
         cout << "3. Exit" << endl;
+        cout << "Option: ";
         string choice;
         getline(cin >> ws, choice);
 
@@ -44,6 +45,6 @@ int main()
             break;
         }
     }
-    
+
     sqlite3_close(db);
 }
