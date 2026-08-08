@@ -19,3 +19,4 @@ int getItemQuantity(int item_id);
 std::optional<Customer> fetchCustomerById(sqlite3 *db, int id);
 std::optional<Customer> fetchCustomerByEmail(sqlite3 *db,const std::string &email);
 bool checkPhone(sqlite3 *db, long long phone);
+void deleteUser(sqlite3 *db,const std::string& email);

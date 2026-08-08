@@ -587,3 +587,43 @@ std::optional<int> getId(sqlite3 *db,const std::string &email)
 
     return result;
 }
+
+void deleteUser(sqlite3 *db,const std::string& email)
+{
+    const char *sql = "DELETE FROM customers WHERE email=?";
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (!sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sql = "DELETE FROM creds WHERE email=?";
+    stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare insert: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        std::cout << "Deleted customer successfully.\n";
+    }
+    else
+    {
+        std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+
+    sqlite3_finalize(stmt);
+}

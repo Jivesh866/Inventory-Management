@@ -29,20 +29,17 @@ void runClientCLI(sqlite3 *db)
             cout << "Enter an account name :";
             getline(cin >> ws, name);
 
-            cout
-                << "Enter your email :";
+            cout << "Enter your email :";
             getline(cin >> ws, email);
             removeWS(email);
             if (!verify.validateEmail(email))
             {
-                cout
-                    << "Enter a valid email" << endl;
+                cout << "Enter a valid email" << endl;
                 break;
             }
             else if (checkEmail(db, email))
             {
-                cout
-                    << "Email already exists, only unique emails are allowed" << endl;
+                cout << "Email already exists, only unique emails are allowed" << endl;
                 break;
             }
 
@@ -52,29 +49,24 @@ void runClientCLI(sqlite3 *db)
             removeWS(age);
             if (stoi(age) < 12 || stoi(age) > 150)
             {
-                cout
-                    << "Enter a valid age" << endl;
+                cout << "Enter a valid age" << endl;
                 break;
             }
 
-            cout
-                << "Enter your phone number :";
+            cout << "Enter your phone number :";
             getline(cin >> ws, phone);
             removeWS(phone);
             if (stoll(phone) < 1000000000 && stoll(phone) > 9999999999)
             {
-                cout
-                    << "Invalid Phone number, must be 10 digits only" << endl;
+                cout << "Invalid Phone number, must be 10 digits only" << endl;
                 break;
             }
 
-            cout
-                << "Enter your password :";
+            cout << "Enter your password :";
             getline(cin >> ws, password);
 
             insertCustomer(db, name, email, stoll(phone), stoi(age), password);
-            cout
-                << "Created the user" << endl;
+            cout << "Created the user" << endl;
             auto id = getId(db, email);
             if (id)
             {
@@ -83,8 +75,7 @@ void runClientCLI(sqlite3 *db)
             }
             else
             {
-                cout
-                    << "Unable to fetch id";
+                cout << "Unable to fetch id";
                 run = false;
             }
             break;
@@ -99,8 +90,7 @@ void runClientCLI(sqlite3 *db)
 
             if (checkEmail(db, email))
             {
-                cout
-                    << "Enter your password: ";
+                cout << "Enter your password: ";
                 getline(cin >> ws, password);
                 removeWS(password);
 
@@ -109,8 +99,7 @@ void runClientCLI(sqlite3 *db)
                     auto name = getName(db, email);
                     if (name)
                     {
-                        cout
-                            << "Successfully logged in as " + *name << endl;
+                        cout << "Successfully logged in as " + *name << endl;
 
                         auto user = fetchCustomerByEmail(db, email);
                         if (user)
@@ -307,8 +296,9 @@ void afterLogin(sqlite3 *db, Customer user)
                     user.updatePassword(db, new_password);
                     run = false;
                 }
-                else{
-                    run=false;
+                else
+                {
+                    run = false;
                 }
             }
 
@@ -317,7 +307,7 @@ void afterLogin(sqlite3 *db, Customer user)
         case 5:
         {
             user.deleteUser(db);
-            run=false;
+            run = false;
             break;
         }
         case 6:
