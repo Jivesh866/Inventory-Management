@@ -31,7 +31,7 @@ cd Inventory-Management
 mkdir build && cd build
 cmake ..
 make
-./Inventory-Management     # executable name may differ, check CMakeLists.txt
+./InventoryApp     
 ```
 
 ## Roadmap
